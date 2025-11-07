@@ -22,7 +22,8 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/server.js ./server.js
 COPY --from=build /app/package*.json ./
 
-RUN npm install --only=production
+# Instalar dependencias de producción sin ejecutar scripts
+RUN npm install --omit=dev --ignore-scripts
 
 # Puerto en el que correrá la app
 ENV PORT=3000

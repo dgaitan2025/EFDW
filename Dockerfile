@@ -1,5 +1,5 @@
 # 🏗️ Etapa 1: Construcción
-FROM node:18 AS build
+FROM node:20 AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN npm run build
 
 
 # 🚀 Etapa 2: Ejecución (solo el servidor y archivos construidos)
-FROM node:18-slim
+FROM node:20-slim
 
 WORKDIR /app
 

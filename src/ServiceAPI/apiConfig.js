@@ -1,6 +1,6 @@
 // DOminio
 export const API_RD = "https://api-llavero-rd.onrender.com"//PRINCIPAL"https://api-llavero-rd.onrender.com" ALTERNO//"https://rd-api-llaveros.onrender.com"//"https://pllaverosweb-d8fnd6d8dyd8hdgb.canadacentral-01.azurewebsites.net"//"https://localhost:7291"//"https://apitect.somee.com"; //RD"http://pruebas.somee.com/"//
-const API_DG = "http://localhost:5299"; //DG http://localhost:5299 -
+const API_DG = "https://apiexamenfinal2.onrender.com"; //DG http://localhost:5299 - https://apiexamenfinal2.onrender.com
 const API_biometrica = "https://www.daossystem.pro"
 
 

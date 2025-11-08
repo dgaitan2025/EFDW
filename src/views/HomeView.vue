@@ -1,31 +1,57 @@
 <template>
   <v-container class="text-center">
-    <h1>Registro de Vehículos</h1>
+    <h1>Registro de Venta</h1>
 
     <form @submit.prevent="submit" class="pa-6 mx-auto text-center" style="max-width: 600px;">
-      <v-text-field v-model="idcolor.value.value" :error-messages="idcolor.errorMessage.value" label="ID Color"
-        type="number" required></v-text-field>
 
-      <v-text-field v-model="idmarca.value.value" :error-messages="idmarca.errorMessage.value" label="ID Marca"
-        type="number" required></v-text-field>
+      <!-- Sucursal -->
+      <v-select
+        v-model="idSucursal.value.value"
+        :items="sucursales"
+        item-title="nombre"
+        item-value="id"
+        label="Sucursal"
+        :error-messages="idSucursal.errorMessage.value"
+        required
+      ></v-select>
 
-      <v-text-field v-model="modelo.value.value" :error-messages="modelo.errorMessage.value" label="Modelo"
-        type="number" required></v-text-field>
+      <!-- Producto -->
+      <v-select
+        v-model="idProducto.value.value"
+        :items="productos"
+        item-title="nombre"
+        item-value="id"
+        label="Producto"
+        :error-messages="idProducto.errorMessage.value"
+        required
+      ></v-select>
 
-      <v-text-field v-model="chasis.value.value" :error-messages="chasis.errorMessage.value" label="Chasis"
-        required></v-text-field>
+      <!-- Cantidad -->
+      <v-text-field
+        v-model="cantidad.value.value"
+        :error-messages="cantidad.errorMessage.value"
+        label="Cantidad"
+        type="number"
+        required
+      ></v-text-field>
 
-      <v-text-field v-model="motor.value.value" :error-messages="motor.errorMessage.value" label="Motor"
-        required></v-text-field>
+      <!-- Cliente -->
+      <v-text-field
+        v-model="nit.value.value"
+        :error-messages="nit.errorMessage.value"
+        label="NIT del Cliente"
+        required
+      ></v-text-field>
 
-      <v-text-field v-model="nombre.value.value" :error-messages="nombre.errorMessage.value" label="Nombre del Vehículo"
-        required></v-text-field>
-
-      <v-select v-model="activo.value.value" :items="items" item-title="text" item-value="value" label="Estado"
-        required></v-select>
+      <v-text-field
+        v-model="nombre.value.value"
+        :error-messages="nombre.errorMessage.value"
+        label="Nombre del Cliente"
+        required
+      ></v-text-field>
 
       <v-btn color="primary" class="me-4" type="submit">
-        Registrar
+        Registrar Venta
       </v-btn>
 
       <v-btn color="secondary" @click="handleReset">
@@ -36,60 +62,93 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useField, useForm } from "vee-validate";
-import { registrarVehiculo } from "../utils/vehiculosService";
 
 // Configuración de Vee Validate
 const { handleSubmit, resetForm } = useForm();
 
 // Campos del formulario
-const idcolor = useField("idcolor", value => (!value ? "Campo requerido" : true));
-const idmarca = useField("idmarca", value => (!value ? "Campo requerido" : true));
-const modelo = useField("modelo", value => (!value ? "Campo requerido" : true));
-const chasis = useField("chasis", value => (!value ? "Campo requerido" : true));
-const motor = useField("motor", value => (!value ? "Campo requerido" : true));
-const nombre = useField("nombre", value => (!value ? "Campo requerido" : true));
-const activo = useField("activo", value => value === null ? "Selecciona el estado" : true);
+const idSucursal = useField("idSucursal", v => (!v ? "Selecciona una sucursal" : true));
+const idProducto = useField("idProducto", v => (!v ? "Selecciona un producto" : true));
+const cantidad = useField("cantidad", v => (!v ? "Ingresa una cantidad" : true));
+const nit = useField("nit", v => (!v ? "Campo requerido" : true));
+const nombre = useField("nombre", v => (!v ? "Campo requerido" : true));
 
-const items = ref([
-  { text: 'Activo', value: 1 },
-  { text: 'Inactivo', value: 0 }
-]);
+// Datos de selects
+const sucursales = ref([]);
+const productos = ref([]);
 
+// Cargar datos desde el backend con fetch
+onMounted(async () => {
+  try {
+    // Obtener sucursales
+    const resSuc = await fetch("https://apiexamenfinal2.onrender.com/api/Sucursales/Sucursales");
+    if (!resSuc.ok) throw new Error("Error al obtener sucursales");
+    sucursales.value = await resSuc.json();
+
+    // Obtener productos
+    const resProd = await fetch("https://apiexamenfinal2.onrender.com/api/Sucursales/productos");
+    if (!resProd.ok) throw new Error("Error al obtener productos");
+    productos.value = await resProd.json();
+  } catch (error) {
+    console.error("Error al cargar datos:", error);
+    alert("Error al cargar sucursales o productos.");
+  }
+});
 
 // Envío del formulario
 const submit = handleSubmit(async (values) => {
   try {
-    // Agregamos los campos que no vienen del formulario
-    const vehiculo = {
-      
-      idcolor: parseInt(values.idcolor),
-      idmarca: parseInt(values.idmarca),
-      modelo: parseInt(values.modelo),
-      chasis: values.chasis,
-      motor: values.motor,
-      nombre: values.nombre,
-      activo: parseInt(values.activo),
-      accion: "C"
+    const ventaData = {
+      venta: {
+        id: null,
+        idSucursal: parseInt(values.idSucursal),
+        fecha: new Date().toISOString().split('T')[0],
+        nit: values.nit,
+        nombre: values.nombre,
+        totalq: 0,
+        opcion: "C"
+      },
+      detalles: [
+        {
+          id: null,
+          idProducto: parseInt(values.idProducto),
+          cantidad: parseInt(values.cantidad),
+          precio: null,
+          subtotal: null,
+          opcion: "C"
+        }
+      ]
     };
 
-    console.log("Enviando vehículo:", vehiculo);
+    console.log("Enviando venta:", ventaData);
 
-    const resultado = await registrarVehiculo(vehiculo);
+    // Enviar venta al backend
+    const res = await fetch("https://apiexamenfinal2.onrender.com/api/Sucursales/venta", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(ventaData)
+    });
 
-    if (resultado.success) {
-      alert(`Vehículo registrado correctamente. ID generado: ${resultado.idGenerado}`);
+    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+    const data = await res.json();
+
+    if (data.success) {
+      alert(`Venta registrada correctamente. ID: ${data.idVenta}`);
       resetForm();
     } else {
-      alert(`Error: ${resultado.message}`);
+      alert(`Error: ${data.message}`);
     }
   } catch (error) {
-    console.error("Error al registrar vehículo:", error);
-    alert("Ocurrió un error al registrar el vehículo.");
+    console.error("Error al registrar venta:", error);
+    alert("Ocurrió un error al registrar la venta.");
   }
 });
 
 // Limpiar formulario
 const handleReset = () => resetForm();
 </script>
+

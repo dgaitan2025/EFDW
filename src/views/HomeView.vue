@@ -26,6 +26,13 @@
         required
       ></v-select>
 
+      <!-- 🔹 Precio del producto seleccionado -->
+      <div v-if="precioSeleccionado > 0" class="mb-4">
+        <v-alert type="info" border="start" variant="tonal">
+          💰 <strong>Precio unitario:</strong> Q{{ precioSeleccionado.toFixed(2) }}
+        </v-alert>
+      </div>
+
       <!-- Cantidad -->
       <v-text-field
         v-model="cantidad.value.value"
@@ -62,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useField, useForm } from "vee-validate";
 
 // Configuración de Vee Validate
@@ -78,6 +85,7 @@ const nombre = useField("nombre", v => (!v ? "Campo requerido" : true));
 // Datos de selects
 const sucursales = ref([]);
 const productos = ref([]);
+const precioSeleccionado = ref(0); // 🔹 Precio que se mostrará en el label
 
 // Cargar datos desde el backend con fetch
 onMounted(async () => {
@@ -97,9 +105,22 @@ onMounted(async () => {
   }
 });
 
+// 🔹 Detectar cambio de producto y mostrar el precio
+watch(() => idProducto.value.value, (nuevoId) => {
+  const producto = productos.value.find(p => p.id === parseInt(nuevoId));
+  if (producto) {
+    precioSeleccionado.value = producto.precioUnitario;
+  } else {
+    precioSeleccionado.value = 0;
+  }
+});
+
 // Envío del formulario
 const submit = handleSubmit(async (values) => {
   try {
+    const producto = productos.value.find(p => p.id === parseInt(values.idProducto));
+    const precio = producto ? producto.precioUnitario : null;
+
     const ventaData = {
       venta: {
         id: null,
@@ -115,8 +136,8 @@ const submit = handleSubmit(async (values) => {
           id: null,
           idProducto: parseInt(values.idProducto),
           cantidad: parseInt(values.cantidad),
-          precio: null,
-          subtotal: null,
+          precio: precio,
+          subtotal: precio ? precio * parseInt(values.cantidad) : null,
           opcion: "C"
         }
       ]
@@ -127,9 +148,7 @@ const submit = handleSubmit(async (values) => {
     // Enviar venta al backend
     const res = await fetch("https://apiexamenfinal2.onrender.com/api/Sucursales/venta", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ventaData)
     });
 
@@ -139,6 +158,7 @@ const submit = handleSubmit(async (values) => {
     if (data.success) {
       alert(`Venta registrada correctamente. ID: ${data.idVenta}`);
       resetForm();
+      precioSeleccionado.value = 0;
     } else {
       alert(`Error: ${data.message}`);
     }
@@ -149,6 +169,8 @@ const submit = handleSubmit(async (values) => {
 });
 
 // Limpiar formulario
-const handleReset = () => resetForm();
+const handleReset = () => {
+  resetForm();
+  precioSeleccionado.value = 0;
+};
 </script>
-
